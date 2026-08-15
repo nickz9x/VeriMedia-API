@@ -6,6 +6,7 @@ import com.vestingCustodyApp.vca.dto.UserRequestDto;
 import com.vestingCustodyApp.vca.entity.User;
 import com.vestingCustodyApp.vca.service.TokenService;
 import com.vestingCustodyApp.vca.service.UserService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,12 +26,12 @@ public class UserController {
     private AuthenticationManager authenticationManager;
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody UserRequestDto data){
+    public ResponseEntity<User> register(@Valid @RequestBody UserRequestDto data){
         return ResponseEntity.ok(service.save(data));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDto> login(@RequestBody UserLoginDto data){
+    public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody UserLoginDto data){
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(data.login(),data.password());
         Authentication auth = authenticationManager.authenticate(authenticationToken);
         User byLogin = service.findByLogin(auth.getName());

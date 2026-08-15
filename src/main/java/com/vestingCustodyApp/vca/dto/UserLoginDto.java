@@ -1,4 +1,6 @@
 package com.vestingCustodyApp.vca.dto;
 
-public record UserLoginDto(String login, String password) {
+import jakarta.validation.constraints.NotBlank;
+
+public record UserLoginDto(@NotBlank String login, @NotBlank String password) {
 }

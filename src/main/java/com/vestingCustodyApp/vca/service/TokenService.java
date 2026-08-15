@@ -30,7 +30,7 @@ public class TokenService {
                     .sign(algorithm);
             return token;
         } catch (JWTCreationException jwtCreationException) {
-            throw new JWTCreationException("error",jwtCreationException);
+            throw new JWTCreationException("error in jwt creation",jwtCreationException);
         }
     }
 

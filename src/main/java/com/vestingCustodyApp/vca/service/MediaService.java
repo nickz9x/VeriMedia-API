@@ -64,9 +64,9 @@ public class MediaService {
 
     @PreAuthorize("hasAnyRole('ADMIN','VERIFIER')")
     public MediaResponseDto reviewMedia(ReviewRequestDto data,Authentication authentication){
-        Media media = repository.findById(data.mediaId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST));
+        Media media = repository.findById(data.mediaId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"media not found"));
         String login = authentication.getName();
-        User user = userRepository.findByLogin(login).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST));
+        User user = userRepository.findByLogin(login).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"user not found"));
         Review review = ReviewMapper.toReview(data, user, media);
         reviewRepository.save(review);
         media.setReview(review);

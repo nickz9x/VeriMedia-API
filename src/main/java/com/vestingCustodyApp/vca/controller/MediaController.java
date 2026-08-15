@@ -2,6 +2,7 @@ package com.vestingCustodyApp.vca.controller;
 
 import com.vestingCustodyApp.vca.dto.*;
 import com.vestingCustodyApp.vca.service.MediaService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -19,7 +20,7 @@ public class MediaController {
     private MediaService service;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, path = "/register")
-    public ResponseEntity<MediaResponseDto> createMedia(@RequestPart("file")MultipartFile file, @ModelAttribute MediaRegisterRequestDto data, Authentication authentication){
+    public ResponseEntity<MediaResponseDto> createMedia( @RequestPart("file")MultipartFile file, @ModelAttribute @Valid MediaRegisterRequestDto data, Authentication authentication){
         return ResponseEntity.ok(service.registerMedia(file,data,authentication));
     }
 
@@ -38,14 +39,14 @@ public class MediaController {
     public ResponseEntity<List<MediaResponseDto>> listAllMediaVerified(){return ResponseEntity.ok(service.listAllVerifiedMedia());}
 
     @PostMapping("/review")
-    public ResponseEntity<MediaResponseDto> reviewMedia(@RequestBody ReviewRequestDto data, Authentication authentication){
+    public ResponseEntity<MediaResponseDto> reviewMedia(@Valid @RequestBody ReviewRequestDto data, Authentication authentication){
         return ResponseEntity.ok(service.reviewMedia(data,authentication));
     }
 
 
     @PostMapping("/request-review/{publicToken}")
     @ResponseStatus(HttpStatus.OK)
-    public void requestReview(@PathVariable String publicToken,@RequestBody String reason){
+    public void requestReview( @PathVariable String publicToken,@RequestBody String reason){
         service.requestReview(publicToken,reason);
     }
 

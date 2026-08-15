@@ -1,8 +1,7 @@
 package com.vestingCustodyApp.vca.dto;
 
-import com.vestingCustodyApp.vca.entity.Media;
-import com.vestingCustodyApp.vca.entity.User;
 import com.vestingCustodyApp.vca.enums.Status;
+import jakarta.validation.constraints.NotNull;
 
-public record ReviewRequestDto(Long mediaId, String observation, Status status) {
+public record ReviewRequestDto(@NotNull Long mediaId, String observation, @NotNull Status status) {
 }

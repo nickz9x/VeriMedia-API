@@ -17,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 
 public class MediaMapper {
-    public static Media toMedia(MediaRegisterRequestDto data, User user, MultipartFile file){
+    public static Media toMedia(MediaRegisterRequestDto data, User user, MultipartFile file,String timestamp){
         Media media = new Media();
         media.setMediaType(data.type());
         media.setOrigin(data.origin());
@@ -31,6 +31,7 @@ public class MediaMapper {
         PasswordEncoder encoder = new PasswordEncoder();
         try {
             media.setHash(encoder.encoder().encode(file.getBytes().toString()));
+            media.setPublicToken(encoder.encoder().encode(timestamp).substring(7,19));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -46,13 +47,14 @@ public class MediaMapper {
                 media.getTool(),
                 media.getPurpose(),
                 media.getStatus(),
-                media.getHash());
+                media.getHash(),
+                media.getPublicToken());
     }
 
     public static PublicMediaResponse toPublicResponseDto(Media media){
          return new PublicMediaResponse(media.getMediaName(),
                 media.getMediaType(),
                 media.getOrigin(),
-                media.getStatus());
+                media.getStatus(), media.getPublicToken());
     }
 }

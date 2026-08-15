@@ -47,10 +47,6 @@ public class MediaController {
         return ResponseEntity.ok(service.aproveMedia(id));
     }
 
-    @GetMapping("/search/{id}")
-    public ResponseEntity<PublicMediaResponse> publicSearchMedia(@PathVariable Long id){
-        return ResponseEntity.ok(service.publicSearchMedia(id));
-    }
 
     @PostMapping("/request-review/{id}")
     @ResponseStatus(HttpStatus.OK)
@@ -61,5 +57,10 @@ public class MediaController {
     @GetMapping("/request-review")
     public ResponseEntity<List<RequestReviewMediaDto>> listRequestResponse(){
         return ResponseEntity.ok(service.listRequestReview());
+    }
+
+    @GetMapping("/public/search/{publicToken}")
+    public ResponseEntity<PublicMediaResponse> publicSearch(@PathVariable String publicToken){
+        return ResponseEntity.ok(service.publicSearchMedia(publicToken));
     }
 }

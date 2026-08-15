@@ -7,5 +7,5 @@ import com.vestingCustodyApp.vca.enums.Status;
 import lombok.NoArgsConstructor;
 
 public record MediaResponseDto(Long id, Long user, String mediaName, MediaType mediaType, MediaOrigin origin, String tool, String purpose,
-                               Status status,String hash) {
+                               Status status,String hash,String publicToken) {
 }

@@ -1,5 +1,6 @@
 package com.vestingCustodyApp.vca.entity;
 
+import com.vestingCustodyApp.vca.config.PasswordEncoder;
 import com.vestingCustodyApp.vca.enums.MediaOrigin;
 import com.vestingCustodyApp.vca.enums.MediaType;
 import com.vestingCustodyApp.vca.enums.Status;
@@ -38,4 +39,5 @@ public class Media {
 
     private String hash;
 
+    private String publicToken;
 }

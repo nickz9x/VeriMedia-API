@@ -30,7 +30,7 @@ public class SecurityConfig {
 
         http.authorizeHttpRequests(auth ->
                 auth.requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/media/search/*").permitAll()
+                        .requestMatchers("/api/media/public/search/**").permitAll()
                         .requestMatchers("/api/media/search/*/approve").hasAnyRole("ADMIN","CREATOR")
                         .anyRequest().authenticated());
         http.sessionManagement(httpSecuritySessionManagementConfigurer -> httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

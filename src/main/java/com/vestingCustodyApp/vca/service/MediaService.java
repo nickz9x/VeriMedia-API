@@ -1,5 +1,7 @@
 package com.vestingCustodyApp.vca.service;
 
+import ch.qos.logback.core.testUtil.RandomUtil;
+import com.vestingCustodyApp.vca.config.PasswordEncoder;
 import com.vestingCustodyApp.vca.dto.MediaRegisterRequestDto;
 import com.vestingCustodyApp.vca.dto.MediaResponseDto;
 import com.vestingCustodyApp.vca.dto.PublicMediaResponse;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -32,7 +35,8 @@ public class MediaService {
 
     public MediaResponseDto registerMedia(MultipartFile file, MediaRegisterRequestDto data, Authentication authentication){
         User user = userRepository.findByLogin(authentication.getName()).get();
-        Media media = MediaMapper.toMedia(data, user, file);
+        String timestamp = Instant.now().toString();
+        Media media = MediaMapper.toMedia(data, user, file,timestamp);
         repository.save(media);
         return MediaMapper.toResponseDto(media);
     }
@@ -59,8 +63,9 @@ public class MediaService {
         return MediaMapper.toResponseDto(media);
     }
 
-    public PublicMediaResponse publicSearchMedia(Long id){
-        Media media = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "media not found"));
+    public PublicMediaResponse publicSearchMedia(String publicToken){
+        Media media = repository.findByPublicToken(publicToken).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "media not found"));
+
         return MediaMapper.toPublicResponseDto(media);
     }
 
@@ -84,7 +89,7 @@ public class MediaService {
     public List<RequestReviewMediaDto> listRequestReview(){
         return reviewRequestMediaRepository.findAll()
                 .stream()
-                .map(reviewMedia -> MediaMapper.toRequestReviewResponseDto(reviewMedia)).toList()
+                .map(reviewMedia -> ReviewRequestMediaMapper.toRequestReviewResponseDto(reviewMedia)).toList()
                 ;
     }
 }

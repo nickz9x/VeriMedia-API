@@ -17,7 +17,7 @@ public class AuthorizationService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String login) throws UsernameNotFoundException {
-        com.vestingCustodyApp.vca.entity.User user = repository.findByLogin(login).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST));
+        com.vestingCustodyApp.vca.entity.User user = repository.findByLogin(login).orElseThrow(() -> new UsernameNotFoundException("username not found"));
         return User.builder()
                 .username(user.getLogin())
                 .password(user.getPassword())

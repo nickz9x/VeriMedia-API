@@ -26,7 +26,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http){
         http.csrf(csrf -> csrf.disable());
-        http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+
+        http.authorizeHttpRequests(auth ->
+                auth.requestMatchers("/api/auth/**").permitAll().anyRequest().authenticated());
         http.sessionManagement(httpSecuritySessionManagementConfigurer -> httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         http.addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

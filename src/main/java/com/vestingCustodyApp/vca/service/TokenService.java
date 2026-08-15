@@ -24,6 +24,7 @@ public class TokenService {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             String token = JWT.create()
                     .withIssuer("nicholas pereira")
+                    .withSubject(user.getLogin())
                     .withIssuedAt(Instant.now())
                     .withExpiresAt(Instant.now().plus(30, ChronoUnit.MINUTES))
                     .sign(algorithm);

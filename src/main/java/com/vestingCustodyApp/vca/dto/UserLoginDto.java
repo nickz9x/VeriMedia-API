@@ -1,4 +1,4 @@
 package com.vestingCustodyApp.vca.dto;
 
-public record UserLoginDto(String Login, String password) {
+public record UserLoginDto(String login, String password) {
 }

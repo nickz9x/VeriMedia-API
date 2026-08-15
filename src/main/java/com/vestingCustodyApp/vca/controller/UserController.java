@@ -3,6 +3,7 @@ package com.vestingCustodyApp.vca.controller;
 import com.vestingCustodyApp.vca.dto.LoginResponseDto;
 import com.vestingCustodyApp.vca.dto.UserLoginDto;
 import com.vestingCustodyApp.vca.dto.UserRequestDto;
+import com.vestingCustodyApp.vca.dto.UserResponseDto;
 import com.vestingCustodyApp.vca.entity.User;
 import com.vestingCustodyApp.vca.service.TokenService;
 import com.vestingCustodyApp.vca.service.UserService;
@@ -26,7 +27,7 @@ public class UserController {
     private AuthenticationManager authenticationManager;
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@Valid @RequestBody UserRequestDto data){
+    public ResponseEntity<UserResponseDto> register(@Valid @RequestBody UserRequestDto data){
         return ResponseEntity.ok(service.save(data));
     }
 

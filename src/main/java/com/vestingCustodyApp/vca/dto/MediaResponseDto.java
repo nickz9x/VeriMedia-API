@@ -5,5 +5,5 @@ import com.vestingCustodyApp.vca.enums.MediaType;
 import com.vestingCustodyApp.vca.enums.Status;
 
 public record MediaResponseDto(Long id, Long user, String mediaName, MediaType mediaType, MediaOrigin origin, String tool, String purpose,
-                               Status status,String hash,String publicToken) {
+                               Status status,String hash,String publicToken,ReviewResponseDto review) {
 }

@@ -4,6 +4,7 @@ import com.vestingCustodyApp.vca.config.PasswordEncoder;
 import com.vestingCustodyApp.vca.dto.MediaRegisterRequestDto;
 import com.vestingCustodyApp.vca.dto.MediaResponseDto;
 import com.vestingCustodyApp.vca.dto.PublicMediaResponse;
+import com.vestingCustodyApp.vca.dto.ReviewResponseDto;
 import com.vestingCustodyApp.vca.entity.Media;
 import com.vestingCustodyApp.vca.entity.User;
 import com.vestingCustodyApp.vca.enums.MediaOrigin;
@@ -35,7 +36,7 @@ public class MediaMapper {
         return media;
     }
 
-    public static MediaResponseDto toResponseDto(Media media){
+    public static MediaResponseDto toResponseDto(Media media, ReviewResponseDto dto){
         return new MediaResponseDto(media.getId(),
                 media.getUser().getId(),
                 media.getMediaName(),
@@ -45,7 +46,8 @@ public class MediaMapper {
                 media.getPurpose(),
                 media.getStatus(),
                 media.getHash(),
-                media.getPublicToken());
+                media.getPublicToken(),
+                dto);
     }
 
     public static PublicMediaResponse toPublicResponseDto(Media media){

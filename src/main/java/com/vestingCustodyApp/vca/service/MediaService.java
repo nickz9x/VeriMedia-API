@@ -1,15 +1,15 @@
 package com.vestingCustodyApp.vca.service;
 
-import com.vestingCustodyApp.vca.dto.MediaRegisterRequestDto;
-import com.vestingCustodyApp.vca.dto.MediaResponseDto;
-import com.vestingCustodyApp.vca.dto.PublicMediaResponse;
-import com.vestingCustodyApp.vca.dto.RequestReviewMediaDto;
+import com.vestingCustodyApp.vca.dto.*;
 import com.vestingCustodyApp.vca.entity.Media;
+import com.vestingCustodyApp.vca.entity.Review;
 import com.vestingCustodyApp.vca.entity.User;
 import com.vestingCustodyApp.vca.enums.Status;
 import com.vestingCustodyApp.vca.mapper.MediaMapper;
+import com.vestingCustodyApp.vca.mapper.ReviewMapper;
 import com.vestingCustodyApp.vca.mapper.ReviewRequestMediaMapper;
 import com.vestingCustodyApp.vca.repository.MediaRepository;
+import com.vestingCustodyApp.vca.repository.ReviewRepository;
 import com.vestingCustodyApp.vca.repository.ReviewRequestMediaRepository;
 import com.vestingCustodyApp.vca.repository.UserRepository;
 import lombok.AllArgsConstructor;
@@ -29,6 +29,7 @@ public class MediaService {
     private MediaRepository repository;
     private UserRepository userRepository;
     private ReviewRequestMediaRepository reviewRequestMediaRepository;
+    private ReviewRepository reviewRepository;
 
     @PreAuthorize("hasRole('CREATOR')")
     public MediaResponseDto registerMedia(MultipartFile file, MediaRegisterRequestDto data, Authentication authentication){
@@ -36,36 +37,43 @@ public class MediaService {
         String timestamp = Instant.now().toString();
         Media media = MediaMapper.toMedia(data, user, file,timestamp);
         repository.save(media);
-        return MediaMapper.toResponseDto(media);
+        return MediaMapper.toResponseDto(media,null);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','VERIFIER')")
     public List<MediaResponseDto> listAllMedia(){
-        return repository.findAll().stream().map(media -> MediaMapper.toResponseDto(media)).toList();
+        return repository.findAll().stream().map(media -> MediaMapper.
+                toResponseDto(media,media.getReview()!=null ? ReviewMapper.toResponseDto(media.getReview()):null)).toList();
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','VERIFIER')")
     public List<MediaResponseDto> listAllPendingMedia(){
-        return repository.findAllByStatus(Status.PENDING).get().stream().map(media -> MediaMapper.toResponseDto(media)).toList();
+        return repository.findAllByStatus(Status.PENDING).get().stream().map(media -> MediaMapper.
+                toResponseDto(media,media.getReview()!=null ? ReviewMapper.toResponseDto(media.getReview()):null)).toList();
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','VERIFIER')")
-    public List<MediaResponseDto> listAllRejectedMedia(){return repository.findAllByStatus(Status.REJECTED).get().stream().map(media -> MediaMapper.toResponseDto(media)).toList();}
+    public List<MediaResponseDto> listAllRejectedMedia(){return repository.findAllByStatus(Status.REJECTED).get().stream().map(media -> MediaMapper.
+            toResponseDto(media,media.getReview()!=null ? ReviewMapper.toResponseDto(media.getReview()):null)).toList();}
 
     @PreAuthorize("hasAnyRole('ADMIN','VERIFIER')")
-    public List<MediaResponseDto> listAllVerifiedMedia(){return repository.findAllByStatus(Status.VERIFIED).get().stream().map(media -> MediaMapper.toResponseDto(media)).toList();}
+    public List<MediaResponseDto> listAllVerifiedMedia(){return repository.findAllByStatus(Status.VERIFIED).get().stream().map(media -> MediaMapper.
+                toResponseDto(media,media.getReview()!=null ? ReviewMapper.toResponseDto(media.getReview()):null)).toList();}
+
+
 
     @PreAuthorize("hasAnyRole('ADMIN','VERIFIER')")
-    public MediaResponseDto aproveMedia(Long id){
-        Media media = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST));
-        if (media.getStatus() == Status.VERIFIED){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-        }
-        media.setStatus(Status.VERIFIED);
+    public MediaResponseDto reviewMedia(ReviewRequestDto data,Authentication authentication){
+        Media media = repository.findById(data.mediaId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST));
+        String login = authentication.getName();
+        User user = userRepository.findByLogin(login).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST));
+        Review review = ReviewMapper.toReview(data, user, media);
+        reviewRepository.save(review);
+        media.setReview(review);
+        media.setStatus(review.getStatus());
         repository.save(media);
-        return MediaMapper.toResponseDto(media);
+        return MediaMapper.toResponseDto(media,ReviewMapper.toResponseDto(review));
     }
-
 
     public PublicMediaResponse publicSearchMedia(String publicToken){
         Media media = repository.findByPublicToken(publicToken).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "media not found"));
@@ -73,23 +81,9 @@ public class MediaService {
         return MediaMapper.toPublicResponseDto(media);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','VERIFIER')")
-    public void contestMedia(Long id){
-        Media media = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "media not found"));
-        media.setStatus(Status.PENDING);
-        repository.save(media);
-    }
-
-    @PreAuthorize("hasAnyRole('ADMIN','VERIFIER')")
-    public MediaResponseDto denyMedia(Long id){
-        Media media = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "media not found"));
-        media.setStatus(Status.REJECTED);
-        return MediaMapper.toResponseDto(repository.save(media));
-    }
-    @PreAuthorize("hasRole('CREATOR')")
-
-    public void requestReview(Long id, String reason){
-        Media media = repository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "media not found"));
+    @PreAuthorize("hasAnyRole('CREATOR','VERIFIER')")
+    public void requestReview(String publicToken, String reason){
+        Media media = repository.findByPublicToken(publicToken).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "media not found"));
         reviewRequestMediaRepository.save(ReviewRequestMediaMapper.toReviewMedia(media,reason));
     }
 

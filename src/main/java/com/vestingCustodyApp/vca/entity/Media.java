@@ -38,4 +38,7 @@ public class Media {
     private String hash;
 
     private String publicToken;
+
+    @ManyToOne
+    private Review review;
 }

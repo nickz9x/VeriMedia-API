@@ -1,9 +1,6 @@
 package com.vestingCustodyApp.vca.controller;
 
-import com.vestingCustodyApp.vca.dto.MediaRegisterRequestDto;
-import com.vestingCustodyApp.vca.dto.MediaResponseDto;
-import com.vestingCustodyApp.vca.dto.PublicMediaResponse;
-import com.vestingCustodyApp.vca.dto.RequestReviewMediaDto;
+import com.vestingCustodyApp.vca.dto.*;
 import com.vestingCustodyApp.vca.service.MediaService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -40,16 +37,16 @@ public class MediaController {
     @GetMapping("/search/verified")
     public ResponseEntity<List<MediaResponseDto>> listAllMediaVerified(){return ResponseEntity.ok(service.listAllVerifiedMedia());}
 
-    @PostMapping("/search/{id}/approve")
-    public ResponseEntity<MediaResponseDto> aproveMedia(@PathVariable Long id){
-        return ResponseEntity.ok(service.aproveMedia(id));
+    @PostMapping("/review")
+    public ResponseEntity<MediaResponseDto> reviewMedia(@RequestBody ReviewRequestDto data, Authentication authentication){
+        return ResponseEntity.ok(service.reviewMedia(data,authentication));
     }
 
 
-    @PostMapping("/request-review/{id}")
+    @PostMapping("/request-review/{publicToken}")
     @ResponseStatus(HttpStatus.OK)
-    public void requestReview(@PathVariable Long id,@RequestBody String reason){
-        service.requestReview(id,reason);
+    public void requestReview(@PathVariable String publicToken,@RequestBody String reason){
+        service.requestReview(publicToken,reason);
     }
 
     @GetMapping("/request-review")

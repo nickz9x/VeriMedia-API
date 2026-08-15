@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: vca
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/veriMediaDb
+    username: user
+    password: postgres
+
+  jpa:
+    hibernate:
+      ddl-auto: update

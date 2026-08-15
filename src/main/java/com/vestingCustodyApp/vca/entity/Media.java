@@ -1,10 +1,8 @@
 package com.vestingCustodyApp.vca.entity;
 
-import com.vestingCustodyApp.vca.config.PasswordEncoder;
 import com.vestingCustodyApp.vca.enums.MediaOrigin;
 import com.vestingCustodyApp.vca.enums.MediaType;
 import com.vestingCustodyApp.vca.enums.Status;
-import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

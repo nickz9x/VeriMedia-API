@@ -4,8 +4,6 @@ import com.vestingCustodyApp.vca.dto.MediaRegisterRequestDto;
 import com.vestingCustodyApp.vca.dto.MediaResponseDto;
 import com.vestingCustodyApp.vca.dto.PublicMediaResponse;
 import com.vestingCustodyApp.vca.dto.RequestReviewMediaDto;
-import com.vestingCustodyApp.vca.entity.Media;
-import com.vestingCustodyApp.vca.entity.RequestReviewMedia;
 import com.vestingCustodyApp.vca.service.MediaService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;

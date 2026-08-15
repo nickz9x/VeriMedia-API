@@ -1,6 +1,5 @@
 package com.vestingCustodyApp.vca.dto;
 
-import com.vestingCustodyApp.vca.entity.Media;
 import com.vestingCustodyApp.vca.enums.MediaOrigin;
 import com.vestingCustodyApp.vca.enums.MediaType;
 import com.vestingCustodyApp.vca.enums.Status;

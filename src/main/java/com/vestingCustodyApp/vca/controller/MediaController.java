@@ -2,9 +2,13 @@ package com.vestingCustodyApp.vca.controller;
 
 import com.vestingCustodyApp.vca.dto.MediaRegisterRequestDto;
 import com.vestingCustodyApp.vca.dto.MediaResponseDto;
+import com.vestingCustodyApp.vca.dto.PublicMediaResponse;
+import com.vestingCustodyApp.vca.dto.RequestReviewMediaDto;
 import com.vestingCustodyApp.vca.entity.Media;
+import com.vestingCustodyApp.vca.entity.RequestReviewMedia;
 import com.vestingCustodyApp.vca.service.MediaService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -25,7 +29,37 @@ public class MediaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Media>> listAll(){
+    public ResponseEntity<List<MediaResponseDto>> listAll(){
         return ResponseEntity.ok(service.listAllMedia());
+    }
+
+    @GetMapping("/search/pending")
+    public ResponseEntity<List<MediaResponseDto>> listAllMediaPending(){return ResponseEntity.ok(service.listAllPendingMedia());}
+
+    @GetMapping("/search/rejected")
+    public ResponseEntity<List<MediaResponseDto>> listAllMediaRejected(){return ResponseEntity.ok(service.listAllRejectedMedia());}
+
+    @GetMapping("/search/verified")
+    public ResponseEntity<List<MediaResponseDto>> listAllMediaVerified(){return ResponseEntity.ok(service.listAllVerifiedMedia());}
+
+    @PostMapping("/search/{id}/approve")
+    public ResponseEntity<MediaResponseDto> aproveMedia(@PathVariable Long id){
+        return ResponseEntity.ok(service.aproveMedia(id));
+    }
+
+    @GetMapping("/search/{id}")
+    public ResponseEntity<PublicMediaResponse> publicSearchMedia(@PathVariable Long id){
+        return ResponseEntity.ok(service.publicSearchMedia(id));
+    }
+
+    @PostMapping("/request-review/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public void requestReview(@PathVariable Long id,@RequestBody String reason){
+        service.requestReview(id,reason);
+    }
+
+    @GetMapping("/request-review")
+    public ResponseEntity<List<RequestReviewMediaDto>> listRequestResponse(){
+        return ResponseEntity.ok(service.listRequestReview());
     }
 }

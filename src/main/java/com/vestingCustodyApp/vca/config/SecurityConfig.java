@@ -1,5 +1,6 @@
 package com.vestingCustodyApp.vca.config;
 
+import com.vestingCustodyApp.vca.enums.Role;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -28,7 +29,10 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable());
 
         http.authorizeHttpRequests(auth ->
-                auth.requestMatchers("/api/auth/**").permitAll().anyRequest().authenticated());
+                auth.requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/media/search/*").permitAll()
+                        .requestMatchers("/api/media/search/*/approve").hasAnyRole("ADMIN","CREATOR")
+                        .anyRequest().authenticated());
         http.sessionManagement(httpSecuritySessionManagementConfigurer -> httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         http.addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
@@ -38,4 +42,5 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration){
         return configuration.getAuthenticationManager();
     }
+
 }

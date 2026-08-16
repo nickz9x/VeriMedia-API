@@ -14,3 +14,7 @@ api:
   security:
     token:
       secret: ${JWT_SECRET:my-secret-key}
+
+app:
+  storage:
+    dir: ${STORAGE_DIR:./storage}

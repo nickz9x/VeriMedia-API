@@ -20,8 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Instant;
+import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -30,12 +31,17 @@ public class MediaService {
     private UserRepository userRepository;
     private ReviewRequestMediaRepository reviewRequestMediaRepository;
     private ReviewRepository reviewRepository;
+    private HashService hashService;
+    private StorageService storageService;
 
     @PreAuthorize("hasRole('CREATOR')")
     public MediaResponseDto registerMedia(MultipartFile file, MediaRegisterRequestDto data, Authentication authentication){
         User user = userRepository.findByLogin(authentication.getName()).get();
-        String timestamp = Instant.now().toString();
-        Media media = MediaMapper.toMedia(data, user, file,timestamp);
+        Media media = MediaMapper.toMedia(data, user, file);
+        media.setVersion(1);
+        media.setHash(hashOf(file));
+        repository.save(media);
+        storeFile(media, file);
         repository.save(media);
         return MediaMapper.toResponseDto(media,null);
     }
@@ -93,5 +99,69 @@ public class MediaService {
                 .stream()
                 .map(reviewMedia -> ReviewRequestMediaMapper.toRequestReviewResponseDto(reviewMedia)).toList()
                 ;
+    }
+
+    @PreAuthorize("hasRole('CREATOR')")
+    public MediaResponseDto newVersion(
+            MediaRegisterRequestDto data,
+            MultipartFile file,
+            Long id,
+            Authentication authentication
+    ) {
+        Media mediaToUpdate = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "media not found"
+                ));
+
+        User user = userRepository.findByLogin(authentication.getName())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "user not found"
+                ));
+
+        if (!mediaToUpdate.getUser().getId().equals(user.getId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "voce nao é o dono da midia"
+            );
+        }
+
+        Media current = mediaToUpdate;
+
+        while (true) {
+            Media child = repository
+                    .findTopByParentMediaOrderByVersionDesc(current)
+                    .orElse(null);
+
+            if (child == null) {
+                break;
+            }
+
+            current = child;
+        }
+
+        Media mediaNewVersion = MediaMapper.toMedia(data, user, file);
+        mediaNewVersion.setHash(hashOf(file));
+        mediaNewVersion.setParentMedia(current);
+        mediaNewVersion.setVersion(current.getVersion() + 1);
+        repository.save(mediaNewVersion);
+        storeFile(mediaNewVersion, file);
+        return MediaMapper.toResponseDto(repository.save(mediaNewVersion),null);
+    }
+
+    private String hashOf(MultipartFile file){
+        try {
+            return hashService.sha256(file.getBytes());
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "failed to read file", e);
+        }
+    }
+
+    private void storeFile(Media media, MultipartFile file){
+        try {
+            media.setFilePath(storageService.store(media.getId(), file));
+        } catch (IOException e) {
+            repository.delete(media);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to store file", e);
+        }
     }
 }

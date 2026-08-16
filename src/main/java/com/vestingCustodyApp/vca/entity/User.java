@@ -2,14 +2,13 @@ package com.vestingCustodyApp.vca.entity;
 
 import com.vestingCustodyApp.vca.enums.Role;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
 @Table(name = "users")
 public class User {
     @Id

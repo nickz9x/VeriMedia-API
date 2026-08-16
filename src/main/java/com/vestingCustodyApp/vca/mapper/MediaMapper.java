@@ -1,6 +1,5 @@
 package com.vestingCustodyApp.vca.mapper;
 
-import com.vestingCustodyApp.vca.config.PasswordEncoder;
 import com.vestingCustodyApp.vca.dto.MediaRegisterRequestDto;
 import com.vestingCustodyApp.vca.dto.MediaResponseDto;
 import com.vestingCustodyApp.vca.dto.PublicMediaResponse;
@@ -11,11 +10,10 @@ import com.vestingCustodyApp.vca.enums.MediaOrigin;
 import com.vestingCustodyApp.vca.enums.Status;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.UUID;
 
 public class MediaMapper {
-    public static Media toMedia(MediaRegisterRequestDto data, User user, MultipartFile file,String timestamp){
+    public static Media toMedia(MediaRegisterRequestDto data, User user, MultipartFile file){
         Media media = new Media();
         media.setMediaType(data.type());
         media.setOrigin(data.origin());
@@ -26,13 +24,7 @@ public class MediaMapper {
         media.setPurpose(data.purpose());
         media.setUser(user);
         media.setStatus(Status.PENDING);
-        PasswordEncoder encoder = new PasswordEncoder();
-        try {
-            media.setHash(encoder.encoder().encode(file.getBytes().toString()));
-            media.setPublicToken(UUID.randomUUID().toString());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        media.setPublicToken(UUID.randomUUID().toString());
         return media;
     }
 

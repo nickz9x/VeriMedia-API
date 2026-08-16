@@ -24,6 +24,12 @@ public class MediaController {
         return ResponseEntity.ok(service.registerMedia(file,data,authentication));
     }
 
+    @PostMapping(path = "{id}/version",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<MediaResponseDto> newVersion(@PathVariable Long id, @ModelAttribute @Valid MediaRegisterRequestDto data,@RequestPart("file") MultipartFile file,Authentication authentication ){
+        return ResponseEntity.ok(service.newVersion(data,file,id,authentication));
+    }
+
+
     @GetMapping
     public ResponseEntity<List<MediaResponseDto>> listAll(){
         return ResponseEntity.ok(service.listAllMedia());

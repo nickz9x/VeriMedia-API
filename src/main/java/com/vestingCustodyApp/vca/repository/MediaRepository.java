@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface MediaRepository extends JpaRepository<Media,Long> {
     Optional<List<Media>> findAllByStatus(Status status);
     Optional<Media> findByPublicToken(String publicToken);
+    Optional<Media> findTopByParentMediaOrderByVersionDesc(Media parentMedia);
 }

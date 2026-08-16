@@ -5,10 +5,12 @@ import com.vestingCustodyApp.vca.enums.MediaType;
 import com.vestingCustodyApp.vca.enums.Status;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
@@ -39,6 +41,13 @@ public class Media {
 
     private String publicToken;
 
+    private String filePath;
+
     @ManyToOne
     private Review review;
+
+    private Integer version;
+
+    @ManyToOne
+    private Media parentMedia;
 }

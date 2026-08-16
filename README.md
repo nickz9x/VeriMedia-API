@@ -16,10 +16,26 @@ Este projeto vai além de um CRUD tradicional. Seus diferenciais são:
 
 - Registro da origem da mídia: humana, assistida por IA, gerada por IA ou manipulada por IA.
 - Cálculo de hash do arquivo para verificar se ele foi alterado após o cadastro.
+- Versionamento append-only: atualizar uma mídia cria uma nova versão imutável; cada versão mantém seu `publicToken` para sempre.
 - Fluxo de verificação: uma declaração pode ser aprovada, questionada ou rejeitada.
 - Controle de acesso por papéis, garantindo que cada usuário execute somente as ações permitidas.
 - Consulta pública de informações selecionadas, sem revelar dados sensíveis do criador.
-- Documentação interativa da API via OpenAPI/Swagger.
+- Documentação interativa da API via OpenAPI/Swagger (planejado).
+
+## Decisões de domínio — integridade e versionamento
+
+O design de integridade segue o princípio **append-only** ("estilo git"): nada é editado, tudo é acrescentado.
+
+| # | Decisão | Justificativa |
+| --- | --- | --- |
+| D1 | Mídia imutável após o registro | Hash só prova integridade se a referência for estável |
+| D2 | Modificação = nova versão (`version` + `parentMedia`) | Nunca editar, sempre acrescentar |
+| D3 | Cada versão tem seu `publicToken` estável e eterno | Citações publicadas continuam verificáveis para sempre |
+| D4 | A última versão é resolvida por endpoint autenticado; token nunca é reapontado | Separa endereço permanente de consulta atual |
+| D5 | Arquivo no disco: uma pasta por mídia, nome gerado pelo servidor (UUID) | Evita path traversal, colisões e caracteres inválidos |
+| D6 | SHA-256 para integridade; comparação com `MessageDigest.isEqual` | Hash determinístico e comparação em tempo constante |
+| D7 | Verificação via endpoint público por `publicToken` | Consulta pública sem expor dados do criador |
+| D8 | Diretório de storage configurável no `application.yaml`; volume no docker-compose; `storage/` no `.gitignore` | Arquivos de mídia fora do git |
 
 ## Perfis de usuário
 
@@ -97,37 +113,40 @@ Fluxo principal:
 1. Criar uma conta ou fazer login e receber um token JWT.
 2. Enviar uma mídia.
 3. Declarar sua origem e informar se houve uso de IA.
-4. Solicitar uma verificação.
-5. Um usuário `VERIFIER` registra um parecer.
-6. Opcionalmente, gerar um link público para consulta da procedência.
+4. Para atualizar a mídia, criar uma nova versão (`POST /api/media/{id}/version`) — a anterior permanece intacta e verificável.
+5. Solicitar uma verificação.
+6. Um usuário `VERIFIER` registra um parecer.
+7. Opcionalmente, gerar um link público para consulta da procedência.
 
-Rotas previstas:
+Rotas da API:
 
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| `POST` | `/api/auth/register` | Cria um usuário. |
-| `POST` | `/api/auth/login` | Autentica e retorna JWT. |
-| `POST` | `/api/media` | Cadastra uma mídia. |
-| `POST` | `/api/media/{id}/declaration` | Registra a declaração de origem. |
-| `POST` | `/api/media/{id}/verification-request` | Solicita revisão. |
-| `POST` | `/api/verification-requests/{id}/review` | Registra o parecer de um verificador. |
-| `GET` | `/public/media/{token}` | Consulta pública de uma mídia compartilhada. |
+| Método | Rota | Descrição | Acesso |
+| --- | --- | --- | --- |
+| `POST` | `/api/auth/register` | Cria um usuário. | Público |
+| `POST` | `/api/auth/login` | Autentica e retorna JWT. | Público |
+| `POST` | `/api/media/register` | Cadastra uma mídia (multipart: arquivo + dados da declaração). | `CREATOR` |
+| `POST` | `/api/media/{id}/version` | Cria uma nova versão da mídia; a anterior permanece intacta. | `CREATOR` (dono) |
+| `GET` | `/api/media` | Lista todas as mídias. | `ADMIN`, `VERIFIER` |
+| `GET` | `/api/media/search/pending` | Lista mídias pendentes de revisão. | `ADMIN`, `VERIFIER` |
+| `GET` | `/api/media/search/rejected` | Lista mídias rejeitadas. | `ADMIN`, `VERIFIER` |
+| `GET` | `/api/media/search/verified` | Lista mídias verificadas. | `ADMIN`, `VERIFIER` |
+| `POST` | `/api/media/review` | Registra o parecer de um verificador. | `ADMIN`, `VERIFIER` |
+| `POST` | `/api/media/request-review/{publicToken}` | Solicita revisão de uma mídia. | `CREATOR`, `VERIFIER` |
+| `GET` | `/api/media/request-review` | Lista solicitações de revisão. | `ADMIN`, `CREATOR` |
+| `GET` | `/api/media/public/search/{publicToken}` | Consulta pública de uma mídia compartilhada. | Público |
 
 ## Documentação da API
 
-Com a aplicação em execução, o Swagger deve estar disponível em:
-
-```text
-http://localhost:8080/swagger-ui/index.html
-```
+Documentação interativa via springdoc-openapi/Swagger está planejada (Fase 4 do `TODO.md`). Por enquanto, este README é a referência de rotas.
 
 ## Próximos passos
 
-- Versionamento de mídias.
+- Hash SHA-256 real + gravação dos arquivos em disco (Fase 1, Etapa 2 do `TODO.md`).
+- Endpoint público de verificação de integridade: `POST /api/media/public/verify/{publicToken}`.
+- Testes automatizados do fluxo de registro, versão e verificação.
 - Armazenamento de arquivos em S3 ou MinIO.
 - Linha do tempo de auditoria.
 - Links públicos com expiração e revogação.
-- Testes de integração para autorização e verificação.
 
 ## Autor
 

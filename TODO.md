@@ -15,9 +15,12 @@
 
 ## Fase 1 — Feature: hash de integridade + versionamento
 
-- [ ] **Etapa 1:** `Media.version` + `Media.parentMedia`; trocar `@Data` por `@Getter`/`@Setter` nas entidades
+- [ ] **Etapa 1:** `Media.version` + `Media.parentMedia`; trocar `@Data` por `@Getter`/`@Setter` nas entidades — **EM ANDAMENTO** (verificação 2026-08-15; ainda não commitado)
+  - [x] `Media`: `version` + `parentMedia` adicionados; `@Data` → `@Getter`/`@Setter`
+  - [ ] `User`, `Review`, `RequestReviewMedia` ainda usam `@Data`
+  - [x] `registerMedia` seta `version = 1`
 - [ ] **Etapa 2:** SHA-256 no service (substituir trecho quebrado do `MediaMapper`); arquivo no disco (pasta por mídia, nome UUID); diretório base no `application.yaml`; `storage/` no `.gitignore`
-- [ ] **Etapa 3:** `POST /api/media/{id}/version` — só o dono; versão = última + 1; v1 intacta
+- [ ] **Etapa 3:** `POST /api/media/{id}/version` — só o dono; versão = última + 1; v1 intacta — **EM ANDAMENTO** (rascunho do `newVersion` no `MediaService`; falta: id da mídia existente, checagem real do dono, cálculo da última versão, return)
 - [ ] **Etapa 4:** `POST /api/media/public/verify/{publicToken}` → `{ matches, mediaName, status }`; adicionar caminho ao permitAll do `SecurityConfig`
 - [ ] **Etapa 5:** `PublicMediaResponse` com `version` + `hash`; volume do storage no docker-compose; README atualizado (decisões D1–D8 + rotas novas)
 - [ ] **Etapa 6:** Testes — hash determinístico, match/mismatch, 403 para não-dono, fluxo completo register → version → verify (v1 continua funcionando)

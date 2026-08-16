@@ -2,152 +2,181 @@
 
 API REST para registrar a procedência de conteúdos digitais e tornar transparente o uso de inteligência artificial em imagens, vídeos, áudios ou documentos.
 
-O sistema permite que um criador cadastre uma mídia, declare como ela foi produzida e solicite uma verificação. Usuários autorizados podem revisar essa declaração, enquanto uma consulta pública pode mostrar informações selecionadas sobre o conteúdo sem expor dados privados.
+O sistema permite que um criador cadastre uma mídia, declare como ela foi produzida e solicite uma verificação. Usuários autorizados revisam a declaração, e qualquer pessoa com o link público pode consultar informações selecionadas — incluindo a verificação de integridade do arquivo — sem expor dados privados.
 
-## Qual problema o projeto resolve?
+---
 
-Com a popularização de ferramentas de IA generativa, tornou-se mais difícil entender a origem de uma mídia: ela foi criada por uma pessoa, gerada por IA ou sofreu alguma modificação artificial?
+## O problema que resolve
 
-O VeriMedia não promete identificar deepfakes automaticamente. Ele cria uma trilha de confiança: registra a declaração do criador, guarda informações de integridade do arquivo e permite um processo de revisão por verificadores.
+Com a popularização de ferramentas de IA generativa, ficou mais difícil entender a origem de uma mídia: ela foi criada por uma pessoa, gerada por IA ou sofreu modificação artificial?
 
-## O que o software tem de especial?
+O VeriMedia não promete detectar deepfakes automaticamente. Ele cria uma **trilha de confiança**: registra a declaração do criador, protege a integridade do arquivo com hash e mantém um processo de revisão por verificadores.
 
-Este projeto vai além de um CRUD tradicional. Seus diferenciais são:
+## Funcionalidades
 
-- Registro da origem da mídia: humana, assistida por IA, gerada por IA ou manipulada por IA.
-- Cálculo de hash do arquivo para verificar se ele foi alterado após o cadastro.
-- Versionamento append-only: atualizar uma mídia cria uma nova versão imutável; cada versão mantém seu `publicToken` para sempre.
-- Fluxo de verificação: uma declaração pode ser aprovada, questionada ou rejeitada.
-- Controle de acesso por papéis, garantindo que cada usuário execute somente as ações permitidas.
-- Consulta pública de informações selecionadas, sem revelar dados sensíveis do criador.
-- Documentação interativa da API via OpenAPI/Swagger (planejado).
-
-## Decisões de domínio — integridade e versionamento
-
-O design de integridade segue o princípio **append-only** ("estilo git"): nada é editado, tudo é acrescentado.
-
-| # | Decisão | Justificativa |
-| --- | --- | --- |
-| D1 | Mídia imutável após o registro | Hash só prova integridade se a referência for estável |
-| D2 | Modificação = nova versão (`version` + `parentMedia`) | Nunca editar, sempre acrescentar |
-| D3 | Cada versão tem seu `publicToken` estável e eterno | Citações publicadas continuam verificáveis para sempre |
-| D4 | A última versão é resolvida por endpoint autenticado; token nunca é reapontado | Separa endereço permanente de consulta atual |
-| D5 | Arquivo no disco: uma pasta por mídia, nome gerado pelo servidor (UUID) | Evita path traversal, colisões e caracteres inválidos |
-| D6 | SHA-256 para integridade; comparação com `MessageDigest.isEqual` | Hash determinístico e comparação em tempo constante |
-| D7 | Verificação via endpoint público por `publicToken` | Consulta pública sem expor dados do criador |
-| D8 | Diretório de storage configurável no `application.yaml`; volume no docker-compose; `storage/` no `.gitignore` | Arquivos de mídia fora do git |
+- **Registro de procedência**: origem humana, assistida por IA, gerada por IA ou manipulada por IA
+- **Integridade**: hash SHA-256 calculado no upload; qualquer pessoa pode verificar se o arquivo foi alterado
+- **Versionamento append-only**: alterar uma mídia cria uma nova versão imutável; cada versão mantém seu `publicToken` para sempre (estilo git: nunca editar, sempre acrescentar)
+- **Fluxo de verificação**: uma declaração pode ser aprovada ou rejeitada por verificadores
+- **Consulta pública**: informações selecionadas (nome, tipo, origem, status, versão e hash) sem dados do criador
+- **Controle de acesso por papéis** com JWT
+- **Documentação interativa** via OpenAPI/Swagger
 
 ## Perfis de usuário
 
 | Perfil | Responsabilidades |
 | --- | --- |
-| `CREATOR` | Cadastra mídias, cria declarações e solicita verificações. |
+| `CREATOR` | Cadastra mídias, cria novas versões e solicita revisões. |
 | `VERIFIER` | Analisa e registra pareceres sobre declarações. |
 | `ADMIN` | Gerencia a plataforma e consulta registros administrativos. |
-| `PUBLIC` | Consulta conteúdos compartilhados publicamente. |
+| `PUBLIC` | Consulta conteúdos compartilhados publicamente (sem autenticação). |
+
+## Decisões de domínio
+
+| # | Decisão | Justificativa |
+| --- | --- | --- |
+| D1 | Mídia imutável após o registro | Hash só prova integridade se a referência for estável; sobrescrever arquivo + hash destrói a trilha de confiança |
+| D2 | Modificação = nova versão (`version` + `parentMedia`) | Nunca editar, sempre acrescentar — análogo a commits do git |
+| D3 | Cada versão tem seu `publicToken` estável e eterno | Citações publicadas (ex.: matéria de jornalista) continuam verificáveis para sempre |
+| D4 | A última versão é resolvida por endpoint autenticado; o token nunca é reapontado | Separa "endereço permanente" de "consulta atual" |
+| D5 | Arquivo no disco: uma pasta por mídia, nome gerado pelo servidor (UUID + extensão) | Evita path traversal, colisões e caracteres inválidos; o nome original vive só no banco |
+| D6 | SHA-256 para integridade; comparação com `MessageDigest.isEqual` | Hash determinístico e comparação em tempo constante |
+| D7 | Verificação via endpoint público `POST` por `publicToken` | Qualquer pessoa verifica a integridade sem expor dados do criador |
+| D8 | Diretório de storage configurável (`STORAGE_DIR`); `storage/` fora do git | Arquivos de mídia não vão para o git |
+
+### Regras de negócio
+
+- **Status de uma mídia:** `PENDING` → `VERIFIED` ou `REJECTED`. Uma mídia finalizada não pode ser re-revisada (`409`).
+- **Um parecer por mídia:** o revisor não pode ser o dono da mídia (`403`) e o parecer deve ser `VERIFIED` ou `REJECTED`.
+- **Correção de declaração:** nunca editar — o dono cria uma nova versão; o histórico permanece auditável.
+- **Consulta pública:** expõe apenas nome, tipo, origem, status, versão e hash — nunca dados do criador.
+
+## Arquitetura
+
+```mermaid
+erDiagram
+    USERS ||--o{ MEDIA : "cria"
+    USERS ||--o{ REVIEW : "emite"
+    MEDIA ||--o| REVIEW : "recebe"
+    MEDIA ||--o{ MEDIA : "nova versao (parentMedia)"
+    MEDIA ||--o{ REQUEST_REVIEW_MEDIA : "solicita"
+```
+
+- **Camadas:** `controller` (REST) → `service` (regras de negócio) → `repository` (Spring Data JPA) → PostgreSQL
+- **Segurança:** JWT (com.auth0) assinado com HMAC256, `SecurityFilter` por requisição, autorização por papel com `@PreAuthorize`
+- **Arquivos:** gravados em disco pelo `StorageService`; hash calculado pelo `HashService` (SHA-256 + `HexFormat`)
+- **Erros:** tratamento global com `@RestControllerAdvice`
 
 ## Tecnologias
 
-- Java 21
-- Spring Boot
-- Spring Web MVC
-- Spring Data JPA
-- Spring Security
-- PostgreSQL
-- Bean Validation
-- OpenAPI / Swagger
-- Docker Compose
+- Java 21 · Spring Boot 4 · Spring Web MVC · Spring Data JPA · Spring Security (JWT)
+- PostgreSQL · Bean Validation · springdoc-openapi (Swagger) · Lombok · Docker Compose
 
 ## Como executar
 
 ### Pré-requisitos
 
-- Java 21
-- Maven ou Maven Wrapper
-- Docker Desktop em execução
+- JDK 21
+- Docker Desktop em execução (para o PostgreSQL)
 
-### 1. Suba o PostgreSQL
+### 1. Configure as variáveis de ambiente
 
-Na raiz do projeto:
+Crie um arquivo `.env` na raiz (use `.env.example` como modelo):
+
+```properties
+JWT_SECRET=<gere uma chave com: openssl rand -base64 48>
+STORAGE_DIR=./storage   # opcional
+```
+
+O `JWT_SECRET` é **obrigatório** — a aplicação não inicia sem ele. No IntelliJ, adicione a variável em *Run → Edit Configurations → Environment variables*, ou defina no sistema (`setx JWT_SECRET "..."`).
+
+### 2. Suba o PostgreSQL
 
 ```bash
 docker compose up -d
 ```
 
-### 2. Confira a configuração
-
-Em `src/main/resources/application.yaml`:
-
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/veriMediaDb
-    username: user
-    password: postgres
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-```
+(O módulo `spring-boot-docker-compose` também inicia o banco automaticamente quando o Docker Desktop está aberto.)
 
 ### 3. Execute a aplicação
 
-No Windows:
-
-```powershell
-.\mvnw spring-boot:run
-```
-
-Ou com Maven instalado:
-
 ```bash
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
 
-A API inicia, por padrão, em `http://localhost:8080`.
+A API inicia em `http://localhost:8080`.
 
-## Como utilizar
-
-Fluxo principal:
-
-1. Criar uma conta ou fazer login e receber um token JWT.
-2. Enviar uma mídia.
-3. Declarar sua origem e informar se houve uso de IA.
-4. Para atualizar a mídia, criar uma nova versão (`POST /api/media/{id}/version`) — a anterior permanece intacta e verificável.
-5. Solicitar uma verificação.
-6. Um usuário `VERIFIER` registra um parecer.
-7. Opcionalmente, gerar um link público para consulta da procedência.
-
-Rotas da API:
+## Rotas da API
 
 | Método | Rota | Descrição | Acesso |
 | --- | --- | --- | --- |
-| `POST` | `/api/auth/register` | Cria um usuário. | Público |
-| `POST` | `/api/auth/login` | Autentica e retorna JWT. | Público |
-| `POST` | `/api/media/register` | Cadastra uma mídia (multipart: arquivo + dados da declaração). | `CREATOR` |
+| `POST` | `/api/auth/register` | Cria um usuário (retorna `201 Created`). | Público |
+| `POST` | `/api/auth/login` | Autentica e retorna o JWT. | Público |
+| `POST` | `/api/media/register` | Cadastra uma mídia (multipart: `file` + dados da declaração). | `CREATOR` |
 | `POST` | `/api/media/{id}/version` | Cria uma nova versão da mídia; a anterior permanece intacta. | `CREATOR` (dono) |
 | `GET` | `/api/media` | Lista todas as mídias. | `ADMIN`, `VERIFIER` |
-| `GET` | `/api/media/search/pending` | Lista mídias pendentes de revisão. | `ADMIN`, `VERIFIER` |
+| `GET` | `/api/media/search/pending` | Lista mídias pendentes. | `ADMIN`, `VERIFIER` |
 | `GET` | `/api/media/search/rejected` | Lista mídias rejeitadas. | `ADMIN`, `VERIFIER` |
 | `GET` | `/api/media/search/verified` | Lista mídias verificadas. | `ADMIN`, `VERIFIER` |
 | `POST` | `/api/media/review` | Registra o parecer de um verificador. | `ADMIN`, `VERIFIER` |
 | `POST` | `/api/media/request-review/{publicToken}` | Solicita revisão de uma mídia. | `CREATOR`, `VERIFIER` |
 | `GET` | `/api/media/request-review` | Lista solicitações de revisão. | `ADMIN`, `CREATOR` |
-| `GET` | `/api/media/public/search/{publicToken}` | Consulta pública de uma mídia compartilhada. | Público |
+| `GET` | `/api/media/public/search/{publicToken}` | Consulta pública de uma mídia. | Público |
+| `POST` | `/api/media/public/verify/{publicToken}` | Verifica a integridade de um arquivo (multipart: `file`). Resposta: `{ matches, mediaName, status }`. | Público |
+
+## Exemplos de uso
+
+```bash
+# 1. Criar usuário (CREATOR)
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"login":"joao","email":"joao@exemplo.com","password":"senha123"}'
+
+# 2. Login → guarde o token
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"login":"joao","password":"senha123"}'
+
+# 3. Cadastrar mídia (multipart)
+curl -X POST http://localhost:8080/api/media/register \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@foto.jpg" \
+  -F "origin=HUMAN" \
+  -F "type=IMAGE" \
+  -F "purpose=registro de teste"
+
+# 4. Criar nova versão (apenas o dono)
+curl -X POST http://localhost:8080/api/media/1/version \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@foto-corrigida.jpg" \
+  -F "origin=HUMAN" \
+  -F "type=IMAGE" \
+  -F "purpose=versao corrigida"
+
+# 5. Verificar integridade (público, sem autenticação)
+curl -X POST http://localhost:8080/api/media/public/verify/SEU_PUBLIC_TOKEN \
+  -F "file=@foto.jpg"
+# → {"matches":true,"mediaName":"foto.jpg","status":"PENDING"}
+```
 
 ## Documentação da API
 
-Documentação interativa via springdoc-openapi/Swagger está planejada (Fase 4 do `TODO.md`). Por enquanto, este README é a referência de rotas.
+Com a aplicação em execução, o Swagger UI está disponível em:
 
-## Próximos passos
+```
+http://localhost:8080/swagger-ui/index.html
+```
 
-- Hash SHA-256 real + gravação dos arquivos em disco (Fase 1, Etapa 2 do `TODO.md`).
-- Endpoint público de verificação de integridade: `POST /api/media/public/verify/{publicToken}`.
-- Testes automatizados do fluxo de registro, versão e verificação.
-- Armazenamento de arquivos em S3 ou MinIO.
-- Linha do tempo de auditoria.
-- Links públicos com expiração e revogação.
+## Testes
 
-## Autor
+```bash
+./mvnw test
+```
 
-Projeto de portfólio para praticar Java, Spring Data JPA, Spring Security, Bean Validation e OpenAPI em um domínio atual e orientado a regras de negócio.
+A suíte cobre o hash (determinismo e detecção de adulteração), o armazenamento em disco, as regras de versionamento (403 para não-dono, última versão + 1), a verificação pública e as transições de status da revisão.
+
+---
+
+Projeto de portfólio para praticar Java, Spring Boot, Spring Security, JPA, Bean Validation e OpenAPI em um domínio atual e orientado a regras de negócio.
+
+**Autor:** Nicholas Pereira

@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Storage de mídias (não vai para o git — D8) ###
+storage/

@@ -9,6 +9,7 @@ import com.vestingCustodyApp.vca.service.TokenService;
 import com.vestingCustodyApp.vca.service.UserService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,7 +29,7 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<UserResponseDto> register(@Valid @RequestBody UserRequestDto data){
-        return ResponseEntity.ok(service.save(data));
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.save(data));
     }
 
     @PostMapping("/login")

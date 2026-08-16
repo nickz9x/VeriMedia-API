@@ -43,7 +43,7 @@ public class Media {
 
     private String filePath;
 
-    @ManyToOne
+    @OneToOne(mappedBy = "media")
     private Review review;
 
     private Integer version;

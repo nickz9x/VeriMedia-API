@@ -81,14 +81,19 @@ erDiagram
 
 ### 1. Configure as variáveis de ambiente
 
-Crie um arquivo `.env` na raiz (use `.env.example` como modelo):
+O `JWT_SECRET` é **obrigatório** — a aplicação não inicia sem ele. Gere uma chave com:
 
-```properties
-JWT_SECRET=<gere uma chave com: openssl rand -base64 48>
-STORAGE_DIR=./storage   # opcional
+```bash
+openssl rand -base64 48
 ```
 
-O `JWT_SECRET` é **obrigatório** — a aplicação não inicia sem ele. No IntelliJ, adicione a variável em *Run → Edit Configurations → Environment variables*, ou defina no sistema (`setx JWT_SECRET "..."`).
+E defina-a como variável de ambiente (o arquivo `.env.example` lista as variáveis usadas pelo projeto):
+
+- **IntelliJ:** *Run → Edit Configurations → Environment variables* → `JWT_SECRET=<sua chave>`
+- **PowerShell:** `setx JWT_SECRET "<sua chave>"` e abra um novo terminal
+- **Git Bash:** `export JWT_SECRET="<sua chave>"` antes de executar o Maven
+
+> Nota: o Spring Boot não lê arquivos `.env` — a variável precisa existir no ambiente do processo.
 
 ### 2. Suba o PostgreSQL
 

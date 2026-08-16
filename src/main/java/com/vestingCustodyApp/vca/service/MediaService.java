@@ -70,9 +70,18 @@ public class MediaService {
 
     @PreAuthorize("hasAnyRole('ADMIN','VERIFIER')")
     public MediaResponseDto reviewMedia(ReviewRequestDto data,Authentication authentication){
-        Media media = repository.findById(data.mediaId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"media not found"));
+        Media media = repository.findById(data.mediaId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"media not found"));
         String login = authentication.getName();
-        User user = userRepository.findByLogin(login).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"user not found"));
+        User user = userRepository.findByLogin(login).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"user not found"));
+        if (media.getStatus() == Status.VERIFIED || media.getStatus() == Status.REJECTED){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "media already finalized");
+        }
+        if (media.getUser().getId().equals(user.getId())){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "you cannot review your own media");
+        }
+        if (data.status() != Status.VERIFIED && data.status() != Status.REJECTED){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "review status must be VERIFIED or REJECTED");
+        }
         Review review = ReviewMapper.toReview(data, user, media);
         reviewRepository.save(review);
         media.setReview(review);
@@ -82,14 +91,24 @@ public class MediaService {
     }
 
     public PublicMediaResponse publicSearchMedia(String publicToken){
-        Media media = repository.findByPublicToken(publicToken).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "media not found"));
+        Media media = repository.findByPublicToken(publicToken).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "media not found"));
 
         return MediaMapper.toPublicResponseDto(media);
     }
 
+    public VerifyResponse verifyMedia(String publicToken, MultipartFile file){
+        Media media = repository.findByPublicToken(publicToken).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "media not found"));
+        try {
+            boolean matches = hashService.matches(file.getBytes(), media.getHash());
+            return new VerifyResponse(matches, media.getMediaName(), media.getStatus());
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "failed to read file", e);
+        }
+    }
+
     @PreAuthorize("hasAnyRole('CREATOR','VERIFIER')")
     public void requestReview(String publicToken, String reason){
-        Media media = repository.findByPublicToken(publicToken).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "media not found"));
+        Media media = repository.findByPublicToken(publicToken).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "media not found"));
         reviewRequestMediaRepository.save(ReviewRequestMediaMapper.toReviewMedia(media,reason));
     }
 

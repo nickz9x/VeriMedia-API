@@ -65,4 +65,9 @@ public class MediaController {
     public ResponseEntity<PublicMediaResponse> publicSearch(@PathVariable String publicToken){
         return ResponseEntity.ok(service.publicSearchMedia(publicToken));
     }
+
+    @PostMapping(path = "/public/verify/{publicToken}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<VerifyResponse> verifyMedia(@PathVariable String publicToken, @RequestPart("file") MultipartFile file){
+        return ResponseEntity.ok(service.verifyMedia(publicToken, file));
+    }
 }

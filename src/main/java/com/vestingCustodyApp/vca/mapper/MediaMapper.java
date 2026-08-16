@@ -46,6 +46,6 @@ public class MediaMapper {
          return new PublicMediaResponse(media.getMediaName(),
                 media.getMediaType(),
                 media.getOrigin(),
-                media.getStatus(), media.getPublicToken());
+                media.getStatus(), media.getPublicToken(), media.getVersion(), media.getHash());
     }
 }

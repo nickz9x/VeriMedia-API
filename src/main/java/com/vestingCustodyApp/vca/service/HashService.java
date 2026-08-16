@@ -10,11 +10,19 @@ import java.util.HexFormat;
 public class HashService {
 
     public String sha256(byte[] bytes){
+        return HexFormat.of().formatHex(sha256Bytes(bytes));
+    }
+
+    public byte[] sha256Bytes(byte[] bytes){
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return HexFormat.of().formatHex(digest.digest(bytes));
+            return MessageDigest.getInstance("SHA-256").digest(bytes);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 is not available in this JVM", e);
         }
+    }
+
+    public boolean matches(byte[] fileBytes, String storedHex){
+        byte[] storedBytes = HexFormat.of().parseHex(storedHex);
+        return MessageDigest.isEqual(sha256Bytes(fileBytes), storedBytes);
     }
 }

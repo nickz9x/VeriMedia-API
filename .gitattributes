@@ -1,0 +1,12 @@
+# Normaliza quebras de linha entre Windows/Linux
+* text=auto
+
+# Arquivos específicos
+*.java text eol=lf
+*.xml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+mvnw text eol=lf
